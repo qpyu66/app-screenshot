@@ -23,7 +23,9 @@
 
 ## 주요 기능
 
-- **ad 레이아웃** — 헤드라인(상단 좌측) + 디바이스(하단 중앙), 앱스토어 광고 스타일
+- **modern ad 레이아웃** — 헤드라인 + 디바이스 + 블러 오브젝트 + 입체 그림자, 최신 앱스토어 광고 스타일
+- **톤앤매너 자동화** — `tone: auto`로 앱 이름·문구·파일명에서 교육/금융/헬스/커머스 등 분위기 추론
+- **프로젝트별 브랜딩** — `app_name`, `tone`, `accent_color`로 요청한 앱 성격에 맞는 색감과 무드 적용
 - **디바이스 프레임 자동 합성** — iPhone Dynamic Island / Home Button, iPad, Android 프레임
 - **배경 커스터마이징** — 단색 또는 그라데이션 (vertical / horizontal / diagonal)
 - **볼드 한국어 폰트** — Apple SD Gothic Neo Bold 자동 탐색
@@ -81,6 +83,10 @@ appshot init
 # screenshots.yaml
 
 defaults:
+  app_name: "클래스링"
+  tone: auto                # auto | education | finance | health | commerce | social | productivity | game
+  design_style: modern     # modern | classic
+  accent_color: auto       # auto | "#hex"
   layout: ad               # ad (기본) | simple
   text_align: left
   frame_color: black       # auto | white | black | "#hex"
@@ -97,9 +103,14 @@ screenshots:
   - input: ./screens/home.png
     headline: "오늘 수업,\n한눈에\n파악하세요"
     subtitle: "출결 현황부터 학생 등록 요청까지\n실시간으로 확인하세요"
+    tone: education
     background:
-      type: solid
-      color: "#3b2a1a"
+      type: gradient
+      direction: diagonal
+      colors:
+        - "#fff7d6"
+        - "#ffdd8a"
+        - "#3267d6"
 
   - input: ./screens/feature.png
     headline: "개인 맞춤\n리포트를 손쉽게"
@@ -195,6 +206,10 @@ caption_position: bottom   # top | bottom
 
 | 키 | 기본값 | 설명 |
 |---|---|---|
+| `app_name` | `""` | 앱 이름. `tone: auto`일 때 톤 추론에 사용 |
+| `tone` | `auto` | 디자인 톤. `auto`, `education`, `finance`, `health`, `commerce`, `social`, `productivity`, `game` |
+| `design_style` | `modern` | `modern`은 최신 앱스토어풍 장식/그림자 적용, `classic`은 기존 단순 렌더링 |
+| `accent_color` | `auto` | 프로젝트 브랜드 포인트 색상. `auto` 또는 `"#hex"` |
 | `layout` | `ad` | 레이아웃 모드. `ad` 또는 `simple` |
 | `frame_color` | `auto` | 디바이스 프레임 색상. `auto`는 배경 밝기에 따라 자동 선택 |
 | `text_align` | `left` | 텍스트 정렬. `left` / `center` / `right` |
@@ -207,6 +222,8 @@ caption_position: bottom   # top | bottom
 | 키 | 설명 |
 |---|---|
 | `input` | 원본 스크린샷 경로 (필수) |
+| `tone` | 이 슬라이드만 디자인 톤 지정 |
+| `accent_color` | 이 슬라이드만 포인트 색상 지정 |
 | `headline` | 큰 볼드 헤드라인 (`\n`으로 줄바꿈) |
 | `subtitle` | 헤드라인 아래 작은 텍스트 |
 | `layout` | 이 슬라이드만 레이아웃 지정 |

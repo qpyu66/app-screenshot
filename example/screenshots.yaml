@@ -1,4 +1,9 @@
 defaults:
+  app_name: "클래스링"
+  tone: auto                # auto | education | finance | health | commerce | social | productivity | game
+  design_style: modern     # modern | classic
+  accent_color: auto       # auto | "#hex"
+  layout: ad
   frame_color: auto        # auto | white | black | "#hex"
   font_size: 80
   text_position: bottom    # top | bottom
@@ -13,24 +18,35 @@ platforms:
 
 screenshots:
   - input: ./screens/home.png
-    caption: "모든 것이 한 곳에"
+    headline: "오늘 수업을\n한눈에"
+    subtitle: "출결, 공지, 학생 관리를\n하나의 화면에서 확인하세요"
+    tone: education
     background:
-      type: solid
-      color: "#4f46e5"
+      type: gradient
+      direction: diagonal
+      colors:
+        - "#fff7d6"
+        - "#ffdd8a"
+        - "#3267d6"
 
   - input: ./screens/search.png
-    caption: "빠른 검색"
-    caption_position: top
+    headline: "필요한 기록을\n빠르게 검색"
+    subtitle: "학생 이름과 수업 정보로\n즉시 찾아보세요"
     background:
       type: gradient
       direction: vertical
       colors:
-        - "#1e1b4b"
-        - "#4338ca"
+        - "#f1f5f9"
+        - "#9fb3c8"
+        - "#182230"
 
   - input: ./screens/profile.png
-    caption: "나만의 프로필"
+    headline: "학생별 리포트를\n깔끔하게"
+    subtitle: "학부모에게 전달하기 좋은\n정돈된 요약 화면"
     background:
-      type: solid
-      color: "#f8fafc"
-    caption_color: "#1e293b"
+      type: gradient
+      direction: diagonal
+      colors:
+        - "#e8fff7"
+        - "#80dec3"
+        - "#145f68"
