@@ -1,0 +1,27 @@
+defaults:
+  frame_color: auto
+  font_size: 72
+  text_position: bottom
+  fit_mode: contain
+  output_dir: ./output
+
+platforms:
+  - apple_iphone
+  - google_phone
+
+screenshots:
+  - input: ./screens/home.png
+    caption: "모든 것이 한 곳에"
+    background:
+      type: gradient
+      direction: vertical
+      colors:
+        - "#4f46e5"
+        - "#7c3aed"
+
+  - input: ./screens/search.png
+    caption: "빠르고 간편하게"
+    caption_position: top
+    background:
+      type: solid
+      color: "#059669"

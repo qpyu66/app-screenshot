@@ -2,15 +2,31 @@
 
 앱스토어 배포에 필요한 스크린샷을 자동으로 생성하는 CLI 도구입니다.
 
-원본 앱 스크린샷과 간단한 YAML 설정 파일만으로, Apple App Store · Google Play · Samsung Galaxy Store에서 요구하는 규격의 PNG 파일을 일괄 생성합니다.
+원본 앱 스크린샷과 YAML 설정 파일만으로, Apple App Store · Google Play · Samsung Galaxy Store에서 요구하는 규격의 PNG 파일을 일괄 생성합니다.
+
+---
+
+## 출력 예시
+
+<table>
+  <tr>
+    <td><img src="docs/images/example_1.png" width="220"/></td>
+    <td><img src="docs/images/example_2.png" width="220"/></td>
+    <td><img src="docs/images/example_3.png" width="220"/></td>
+  </tr>
+</table>
+
+헤드라인을 상단에, 디바이스 목업을 하단에 배치하는 **ad 레이아웃** 기본 적용.  
+실제 앱 스크린샷을 넣으면 위와 같이 생성됩니다.
 
 ---
 
 ## 주요 기능
 
-- **디바이스 프레임 자동 합성** — iPhone (Dynamic Island / Home Button), iPad, Android 프레임을 코드로 직접 드로잉
+- **ad 레이아웃** — 헤드라인(상단 좌측) + 디바이스(하단 중앙), 앱스토어 광고 스타일
+- **디바이스 프레임 자동 합성** — iPhone Dynamic Island / Home Button, iPad, Android 프레임
 - **배경 커스터마이징** — 단색 또는 그라데이션 (vertical / horizontal / diagonal)
-- **텍스트 오버레이** — 캡션 자동 줄바꿈, 드롭섀도우, 배경 밝기에 따른 자동 색상
+- **볼드 한국어 폰트** — Apple SD Gothic Neo Bold 자동 탐색
 - **전 플랫폼 지원** — Apple / Google / Samsung 8개 플랫폼 규격 내장
 - **외부 에셋 불필요** — Pillow 하나로 모든 렌더링 처리
 
@@ -55,8 +71,6 @@ pip install -e .
 appshot init
 ```
 
-`screenshots.yaml` 파일이 생성됩니다.
-
 ### 2. 스크린샷 준비
 
 `./screens/` 폴더에 앱 스크린샷(PNG/JPG)을 넣습니다.
@@ -64,11 +78,13 @@ appshot init
 ### 3. 설정 편집
 
 ```yaml
+# screenshots.yaml
+
 defaults:
-  frame_color: auto      # auto | white | black | "#hex"
-  font_size: 80
-  text_position: bottom  # top | bottom
-  fit_mode: contain      # contain | cover
+  layout: ad               # ad (기본) | simple
+  text_align: left
+  frame_color: black       # auto | white | black | "#hex"
+  fit_mode: cover
   output_dir: ./output
 
 platforms:
@@ -79,20 +95,28 @@ platforms:
 
 screenshots:
   - input: ./screens/home.png
-    caption: "모든 것이 한 곳에"
+    headline: "오늘 수업,\n한눈에\n파악하세요"
+    subtitle: "출결 현황부터 학생 등록 요청까지\n실시간으로 확인하세요"
     background:
       type: solid
-      color: "#4f46e5"
+      color: "#3b2a1a"
 
-  - input: ./screens/search.png
-    caption: "빠른 검색"
-    caption_position: top
+  - input: ./screens/feature.png
+    headline: "개인 맞춤\n리포트를 손쉽게"
+    subtitle: "템플릿으로 반복 작업 없이\n클릭 몇 번으로 발송"
+    background:
+      type: solid
+      color: "#c4a47c"
+
+  - input: ./screens/notice.png
+    headline: "공지사항,\n절대 놓치지\n않게"
+    subtitle: "선생님의 공지를\n학생과 학부모가 실시간으로"
     background:
       type: gradient
       direction: vertical
       colors:
-        - "#1e1b4b"
-        - "#4338ca"
+        - "#1a2744"
+        - "#2d3f6e"
 ```
 
 ### 4. 빌드
@@ -101,19 +125,16 @@ screenshots:
 appshot build
 ```
 
-`./output/` 폴더에 플랫폼별로 PNG 파일이 생성됩니다.
-
 ```
 output/
   apple_iphone/
     01_home_iphone_69.png   (1320×2868)
     01_home_iphone_65.png   (1242×2688)
     01_home_iphone_55.png   (1242×2208)
-    02_search_iphone_69.png
+    02_feature_iphone_69.png
     ...
   apple_ipad/
     01_home_ipad_13.png     (2064×2752)
-    ...
   google_phone/
     01_home_phone.png       (1080×1920)
   samsung_phone/
@@ -131,7 +152,7 @@ appshot build
 # 설정 파일 지정
 appshot build -c path/to/screenshots.yaml
 
-# 특정 플랫폼만 빌드
+# 특정 플랫폼만
 appshot build -p apple_iphone
 appshot build -p google_phone
 
@@ -144,33 +165,60 @@ appshot list-sizes
 
 ---
 
-## 설정 옵션
+## 레이아웃
+
+### `ad` (기본)
+
+상단에 헤드라인, 하단에 디바이스 목업. 앱스토어 마케팅 스크린샷에 최적화.
+
+```yaml
+layout: ad
+headline: "앱 이름,\n한눈에\n파악하세요"
+subtitle: "핵심 기능을 한 문장으로 설명"
+```
+
+### `simple`
+
+디바이스를 이미지 중앙에 배치하고 위/아래에 캡션 텍스트.
+
+```yaml
+layout: simple
+caption: "핵심 기능 설명"
+caption_position: bottom   # top | bottom
+```
+
+---
+
+## 전체 설정 옵션
 
 ### `defaults`
 
 | 키 | 기본값 | 설명 |
 |---|---|---|
+| `layout` | `ad` | 레이아웃 모드. `ad` 또는 `simple` |
 | `frame_color` | `auto` | 디바이스 프레임 색상. `auto`는 배경 밝기에 따라 자동 선택 |
-| `font_size` | `80` | 캡션 폰트 크기 (px, 최종 출력 해상도 기준) |
-| `text_position` | `bottom` | 캡션 위치. `top` 또는 `bottom` |
-| `fit_mode` | `contain` | 스크린샷 피팅 방식. `contain`(레터박스) 또는 `cover`(크롭) |
-| `output_dir` | `./output` | 출력 폴더 경로 |
+| `text_align` | `left` | 텍스트 정렬. `left` / `center` / `right` |
+| `font_size` | `80` | simple 레이아웃 캡션 크기 (px) |
+| `fit_mode` | `contain` | `contain`(레터박스) / `cover`(크롭) |
+| `output_dir` | `./output` | 출력 폴더 |
 
 ### `screenshots` 항목별 옵션
 
 | 키 | 설명 |
 |---|---|
 | `input` | 원본 스크린샷 경로 (필수) |
-| `caption` | 표시할 텍스트 |
-| `caption_position` | `top` / `bottom` (defaults 값 덮어쓰기) |
-| `caption_font_size` | 이 슬라이드만 폰트 크기 지정 |
+| `headline` | 큰 볼드 헤드라인 (`\n`으로 줄바꿈) |
+| `subtitle` | 헤드라인 아래 작은 텍스트 |
+| `layout` | 이 슬라이드만 레이아웃 지정 |
+| `text_align` | `left` / `center` / `right` |
+| `caption` | simple 레이아웃 캡션 |
+| `caption_position` | `top` / `bottom` |
 | `caption_color` | `auto` 또는 `"#hex"` |
 | `fit_mode` | `contain` / `cover` |
 | `background.type` | `solid` 또는 `gradient` |
-| `background.color` | 단색 배경 hex 값 |
+| `background.color` | 단색 배경 hex |
 | `background.colors` | 그라데이션 색상 배열 |
 | `background.direction` | `vertical` / `horizontal` / `diagonal` |
-| `background.stops` | 그라데이션 중단점 (0.0 ~ 1.0, colors와 동일 길이) |
 
 ---
 
