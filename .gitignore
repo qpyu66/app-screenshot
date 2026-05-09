@@ -7,9 +7,10 @@ dist/
 build/
 .DS_Store
 
-# 생성된 출력 이미지 (직접 생성하는 파일)
-test/output/
-output/
+# 생성된 출력 이미지
+test/output*/
+output*/
 
-# 개발용 테스트 이미지 (실제 앱 스크린샷은 본인이 관리)
-test/screens/
+# 테스트용 파일
+test/
+.claude/
