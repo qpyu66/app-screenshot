@@ -2,11 +2,18 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageChops, ImageDraw
 
 from .platforms import DeviceSpec, SizeSpec
 
 SUPERSAMPLE = 2
+
+
+def _hex_to_rgb(hex_color: str) -> tuple[int, int, int]:
+    h = hex_color.lstrip("#")
+    if len(h) == 3:
+        h = h[0] * 2 + h[1] * 2 + h[2] * 2
+    return (int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16))
 
 
 @dataclass
@@ -21,12 +28,22 @@ class FrameGeometry:
     side_buttons: list[tuple[int, int, int, int]]
 
 
-def calculate_geometry(size: SizeSpec, device: DeviceSpec) -> FrameGeometry:
+def calculate_geometry(size: SizeSpec, device: DeviceSpec, layout: str = "centered") -> FrameGeometry:
     W, H = size.width, size.height
 
-    bx = int(W * device.body_inset_x_ratio)
-    by = int(H * device.body_inset_y_ratio)
-    body_box = (bx, by, W - bx, H - by)
+    if layout == "ad":
+        device_h = int(H * 0.62)
+        device_w = int(device_h * 0.46)
+        bottom_margin = int(H * 0.03)
+        bx = (W - device_w) // 2
+        by_bottom = H - bottom_margin
+        by_top = by_bottom - device_h
+        body_box = (bx, by_top, bx + device_w, by_bottom)
+    else:
+        bx = int(W * device.body_inset_x_ratio)
+        by = int(H * device.body_inset_y_ratio)
+        body_box = (bx, by, W - bx, H - by)
+
     body_w = body_box[2] - body_box[0]
     body_h = body_box[3] - body_box[1]
     body_radius = int(body_w * device.corner_radius_ratio)
@@ -61,7 +78,8 @@ def calculate_geometry(size: SizeSpec, device: DeviceSpec) -> FrameGeometry:
         hy = body_box[3] - int((body_box[3] - screen_box[3]) * 0.5)
         home_btn_center = (hx, hy)
 
-    btn_w = max(int(bx * 0.6), 4)
+    # 버튼 크기는 항상 바디 너비 기준 (캔버스 여백과 무관)
+    btn_w = max(int(body_w * 0.025), 4)
     btn_h = int(body_h * 0.08)
     btn_gap = int(body_h * 0.04)
     vol_top = body_box[1] + int(body_h * 0.30)
@@ -117,40 +135,60 @@ def draw_frame(
 ) -> None:
     W, H = canvas.size
     S = SUPERSAMPLE
-    overlay = Image.new("RGBA", (W * S, H * S), (0, 0, 0, 0))
-    draw = ImageDraw.Draw(overlay)
+    size2 = (W * S, H * S)
 
     body_color, border_color = _resolve_frame_color(frame_color, bg_luminance)
+    body_r, body_g, body_b = _hex_to_rgb(body_color)
 
     body2 = _scale_box(geometry.body_box, S)
     br2 = geometry.body_radius * S
+    screen2 = _scale_box(geometry.screen_box, S)
+    sr2 = geometry.screen_radius * S
 
-    draw.rounded_rectangle(body2, radius=br2, fill=body_color, outline=border_color, width=max(2, S))
+    # 바디 형태 마스크 (전체)
+    body_shape = Image.new("L", size2, 0)
+    ImageDraw.Draw(body_shape).rounded_rectangle(body2, radius=br2, fill=255)
 
+    # 스크린 형태 마스크 (구멍으로 뚫을 영역)
+    screen_shape = Image.new("L", size2, 0)
+    ImageDraw.Draw(screen_shape).rounded_rectangle(screen2, radius=sr2, fill=255)
+
+    # 프레임 = 바디 - 스크린 (링 모양)
+    frame_shape = ImageChops.subtract(body_shape, screen_shape)
+
+    overlay = Image.new("RGBA", size2, (0, 0, 0, 0))
+    frame_fill = Image.new("RGBA", size2, (body_r, body_g, body_b, 255))
+    overlay.paste(frame_fill, mask=frame_shape)
+
+    # 바디 테두리 선
+    border_draw = ImageDraw.Draw(overlay)
+    border_r, border_g, border_b = _hex_to_rgb(border_color)
+    border_draw.rounded_rectangle(
+        body2, radius=br2, fill=None,
+        outline=(border_r, border_g, border_b, 180), width=max(3, S * 2),
+    )
+
+    # Dynamic Island
     if geometry.island_box:
         isl2 = _scale_box(geometry.island_box, S)
         isl_r = (isl2[3] - isl2[1]) // 2
-        draw.rounded_rectangle(isl2, radius=isl_r, fill="#111111")
+        border_draw.rounded_rectangle(isl2, radius=isl_r, fill="#111111")
 
+    # Home button
     if geometry.home_btn_center:
         hc = (geometry.home_btn_center[0] * S, geometry.home_btn_center[1] * S)
         hr = geometry.home_btn_radius * S
-        draw.ellipse(
+        border_draw.ellipse(
             (hc[0] - hr, hc[1] - hr, hc[0] + hr, hc[1] + hr),
-            fill=body_color,
-            outline=border_color,
-            width=max(2, S),
+            fill=body_color, outline=border_color, width=max(2, S),
         )
         inner = int(hr * 0.65)
-        draw.ellipse(
+        border_draw.ellipse(
             (hc[0] - inner, hc[1] - inner, hc[0] + inner, hc[1] + inner),
             fill=border_color,
         )
 
-    btn_radius = max(2, S * 2)
-    for btn in geometry.side_buttons:
-        btn2 = _scale_box(btn, S)
-        draw.rounded_rectangle(btn2, radius=btn_radius, fill=body_color, outline=border_color, width=max(1, S))
+    # 사이드 버튼: 배경색이 다양하므로 그리지 않음 (앱스토어 스크린샷 관례)
 
     overlay = overlay.resize((W, H), Image.LANCZOS)
     canvas.alpha_composite(overlay)

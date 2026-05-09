@@ -25,6 +25,12 @@ class BackgroundConfig:
 @dataclass
 class ScreenshotConfig:
     input: Path
+    # ad 레이아웃용 (headline + subtitle)
+    headline: str = ""
+    subtitle: str = ""
+    layout: str = "ad"          # "ad" | "simple"
+    text_align: str = "left"
+    # simple 레이아웃 호환용
     caption: str = ""
     caption_position: str = "bottom"
     caption_font_size: int | None = None
@@ -37,10 +43,12 @@ class ScreenshotConfig:
 class GlobalDefaults:
     frame_color: str = "auto"
     font: str | None = None
+    headline_font: str | None = None
     font_size: int = 80
     text_color: str = "auto"
-    text_align: str = "center"
+    text_align: str = "left"
     text_position: str = "bottom"
+    layout: str = "ad"
     fit_mode: str = "contain"
     output_dir: str = "./output"
 
@@ -75,13 +83,6 @@ def _parse_background(raw: dict | str | None) -> BackgroundConfig:
     raise ConfigError(f"Unknown background type: {bg_type!r}")
 
 
-def _validate_hex(color: str, field_name: str) -> None:
-    if color in ("auto",):
-        return
-    if not (color.startswith("#") and len(color) in (4, 7)):
-        raise ConfigError(f"{field_name}: invalid hex color {color!r}")
-
-
 def load_config(path: Path) -> AppShotConfig:
     try:
         raw = yaml.safe_load(path.read_text(encoding="utf-8"))
@@ -95,20 +96,20 @@ def load_config(path: Path) -> AppShotConfig:
 
     base_dir = path.parent
 
-    # Defaults
     raw_defaults = raw.get("defaults", {}) or {}
     defaults = GlobalDefaults(
         frame_color=raw_defaults.get("frame_color", "auto"),
         font=raw_defaults.get("font"),
+        headline_font=raw_defaults.get("headline_font"),
         font_size=int(raw_defaults.get("font_size", 80)),
         text_color=raw_defaults.get("text_color", "auto"),
-        text_align=raw_defaults.get("text_align", "center"),
+        text_align=raw_defaults.get("text_align", "left"),
         text_position=raw_defaults.get("text_position", "bottom"),
+        layout=raw_defaults.get("layout", "ad"),
         fit_mode=raw_defaults.get("fit_mode", "contain"),
         output_dir=raw_defaults.get("output_dir", "./output"),
     )
 
-    # Platforms
     raw_platforms = raw.get("platforms") or list(PLATFORM_REGISTRY.keys())
     platforms: list[str] = []
     for pid in raw_platforms:
@@ -117,7 +118,6 @@ def load_config(path: Path) -> AppShotConfig:
             raise ConfigError(f"Unknown platform {pid!r}. Known: {known}")
         platforms.append(pid)
 
-    # Screenshots
     raw_shots = raw.get("screenshots")
     if not raw_shots:
         raise ConfigError("'screenshots' list is required and must not be empty")
@@ -135,6 +135,10 @@ def load_config(path: Path) -> AppShotConfig:
         bg = _parse_background(s.get("background"))
         screenshots.append(ScreenshotConfig(
             input=input_path,
+            headline=s.get("headline", ""),
+            subtitle=s.get("subtitle", ""),
+            layout=s.get("layout", defaults.layout),
+            text_align=s.get("text_align", defaults.text_align),
             caption=s.get("caption", ""),
             caption_position=s.get("caption_position", defaults.text_position),
             caption_font_size=s.get("caption_font_size"),
@@ -153,10 +157,10 @@ def load_config(path: Path) -> AppShotConfig:
 
 SAMPLE_CONFIG = """\
 defaults:
-  frame_color: auto        # auto | white | black | "#hex"
-  font_size: 80
-  text_position: bottom    # top | bottom
-  fit_mode: contain        # contain | cover
+  layout: ad               # ad | simple
+  text_align: left         # left | center
+  frame_color: black       # auto | white | black | "#hex"
+  fit_mode: cover          # contain | cover
   output_dir: ./output
 
 platforms:
@@ -167,25 +171,16 @@ platforms:
 
 screenshots:
   - input: ./screens/home.png
-    caption: "모든 것이 한 곳에"
+    headline: "앱 이름,\\n한눈에\\n파악하세요"
+    subtitle: "주요 기능을 한 문장으로\\n간략하게 설명하세요"
     background:
       type: solid
-      color: "#4f46e5"
+      color: "#3b2a1a"
 
-  - input: ./screens/search.png
-    caption: "빠른 검색"
-    caption_position: top
-    background:
-      type: gradient
-      direction: vertical
-      colors:
-        - "#1e1b4b"
-        - "#4338ca"
-
-  - input: ./screens/profile.png
-    caption: "나만의 프로필"
+  - input: ./screens/feature.png
+    headline: "편리한 기능을\\n손쉽게"
+    subtitle: "템플릿으로 반복 작업 없이\\n클릭 몇 번으로 완료"
     background:
       type: solid
-      color: "#f8fafc"
-    caption_color: "#1e293b"
+      color: "#1a2744"
 """
