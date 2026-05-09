@@ -1,0 +1,36 @@
+defaults:
+  frame_color: auto        # auto | white | black | "#hex"
+  font_size: 80
+  text_position: bottom    # top | bottom
+  fit_mode: contain        # contain | cover
+  output_dir: ./output
+
+platforms:
+  - apple_iphone
+  - apple_ipad
+  - google_phone
+  - samsung_phone
+
+screenshots:
+  - input: ./screens/home.png
+    caption: "모든 것이 한 곳에"
+    background:
+      type: solid
+      color: "#4f46e5"
+
+  - input: ./screens/search.png
+    caption: "빠른 검색"
+    caption_position: top
+    background:
+      type: gradient
+      direction: vertical
+      colors:
+        - "#1e1b4b"
+        - "#4338ca"
+
+  - input: ./screens/profile.png
+    caption: "나만의 프로필"
+    background:
+      type: solid
+      color: "#f8fafc"
+    caption_color: "#1e293b"
